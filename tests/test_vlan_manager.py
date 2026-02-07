@@ -92,7 +92,7 @@ class TestVlanManager(unittest.TestCase):
             content = f.read()
             self.assertIn('Address=10.0.0.1/24', content)
             self.assertIn('DHCPServer=no', content)
-            self.assertIn('IPMasquerade=no', content)
+            self.assertIn('IPMasquerade=yes', content)
 
         # Should detect '25-my-bridge.network' as parent config
         dropin_path = os.path.join(Config.NETWORK_DIR, '25-my-bridge.network.d', 'vlan-20.conf')

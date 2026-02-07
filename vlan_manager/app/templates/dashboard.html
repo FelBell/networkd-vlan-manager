@@ -138,7 +138,9 @@
                     options.style.display = checkbox.checked ? 'block' : 'none';
                     var inputs = options.querySelectorAll('input');
                     inputs.forEach(input => {
-                        input.required = checkbox.checked;
+                        if (input.name !== 'dns_servers') {
+                            input.required = checkbox.checked;
+                        }
                     });
                 }
                 </script>

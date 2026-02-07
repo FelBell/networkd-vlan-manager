@@ -139,8 +139,8 @@ Name={name}
 [Network]
 Address={vlan['cidr']}
 DHCPServer=no
-IPMasquerade=no
-IPForward=yes
+IPMasquerade={'yes' if vlan.get('nat') else 'no'}
+IPForward={'yes' if vlan.get('nat') else 'no'}
 """
             with open(os.path.join(network_dir, f"20-{name}.network"), 'w') as f:
                 f.write(network_content)
