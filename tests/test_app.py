@@ -51,6 +51,7 @@ class TestVlanApp(unittest.TestCase):
             "dhcp": True,
             "dhcp_start": "192.168.40.100",
             "dhcp_end": "192.168.40.200",
+            "forwarding": True,
             "nat": False
         }
         response = self.app.post('/api/vlans', json=data)
