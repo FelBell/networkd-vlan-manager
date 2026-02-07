@@ -262,10 +262,6 @@ VLAN={name}
                 "interfaces-config": {
                     "interfaces": interfaces
                 },
-                "control-socket": {
-                    "socket-type": "unix",
-                    "socket-name": "/run/kea/kea-dhcp4-ctrl.sock"
-                },
                 "lease-database": {
                     "type": "memfile",
                     "lfc-interval": 3600
