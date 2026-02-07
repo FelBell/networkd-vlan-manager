@@ -56,7 +56,8 @@
                     <th>ID</th>
                     <th>Subnet (CIDR)</th>
                     <th>DHCP</th>
-                    <th>NAT/Fwd</th>
+                    <th>Forwarding</th>
+                    <th>NAT</th>
                     <th>Action</th>
                 </tr>
             </thead>
@@ -66,6 +67,7 @@
                     <td>{{ vlan.id }}</td>
                     <td>{{ vlan.cidr }}</td>
                     <td>{{ 'Enabled' if vlan.dhcp else 'Disabled' }}</td>
+                    <td>{{ 'Enabled' if vlan.get('forwarding', True) else 'Disabled' }}</td>
                     <td>{{ 'Enabled' if vlan.nat else 'Disabled' }}</td>
                     <td>
                         <form action="{{ url_for('delete_vlan', vlan_id=vlan.id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete VLAN {{ vlan.id }}?');">
@@ -97,7 +99,12 @@
                 </div>
                 <div class="form-group">
                     <label class="checkbox-label">
-                        <input type="checkbox" name="nat"> Enable NAT (Masquerade) & IP Forwarding
+                        <input type="checkbox" name="forwarding"> Enable IP Forwarding
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="nat"> Enable NAT (Masquerade)
                     </label>
                 </div>
                 <button type="submit" class="btn btn-primary">Add VLAN</button>
