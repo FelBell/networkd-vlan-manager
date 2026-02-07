@@ -49,6 +49,7 @@ class TestVlanApp(unittest.TestCase):
             "id": 40,
             "cidr": "192.168.40.1/24",
             "dhcp": True,
+            "forwarding": True,
             "nat": False
         }
         response = self.app.post('/api/vlans', json=data)
