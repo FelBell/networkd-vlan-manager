@@ -17,10 +17,33 @@ class VlanManager:
             return []
         try:
             with open(self.data_file, 'r') as f:
-                return json.load(f)
+                vlans = json.load(f)
+                self._check_for_overlaps(vlans, raise_error=False)
+                return vlans
         except Exception as e:
             logger.error(f"Failed to load VLANs: {e}")
             return []
+
+    def _check_for_overlaps(self, vlans, raise_error=True):
+        """Check for overlapping network ranges in the provided list of VLANs."""
+        networks = []
+        for v in vlans:
+            try:
+                new_net = ipaddress.ip_network(v['cidr'], strict=False)
+            except ValueError:
+                msg = f"VLAN {v.get('id')} has invalid CIDR: {v.get('cidr')}"
+                if raise_error:
+                    raise ValueError(msg)
+                logger.warning(msg)
+                continue
+
+            for existing_id, existing_net in networks:
+                if new_net.overlaps(existing_net):
+                    msg = f"Network {new_net} (VLAN {v['id']}) overlaps with existing VLAN {existing_id} ({existing_net})"
+                    if raise_error:
+                        raise ValueError(msg)
+                    logger.warning(msg)
+            networks.append((v['id'], new_net))
 
     def save_vlans(self):
         os.makedirs(os.path.dirname(self.data_file), exist_ok=True)
@@ -31,11 +54,14 @@ class VlanManager:
         return self.vlans
 
     def add_vlan(self, vlan_data):
+        """Add a new VLAN after validating its ID and network range."""
         try:
             v_id = int(vlan_data['id'])
             if v_id < 1 or v_id > 4094:
                 raise ValueError("VLAN ID must be between 1 and 4094")
-        except ValueError:
+        except ValueError as e:
+            if "VLAN ID" in str(e):
+                raise
             raise ValueError("Invalid VLAN ID")
 
         for v in self.vlans:
@@ -51,6 +77,10 @@ class VlanManager:
         vlan_data['id'] = v_id
         vlan_data['dhcp'] = bool(vlan_data.get('dhcp'))
         vlan_data['nat'] = bool(vlan_data.get('nat'))
+
+        # Check for overlaps
+        potential_vlans = self.vlans + [vlan_data]
+        self._check_for_overlaps(potential_vlans, raise_error=True)
 
         self.vlans.append(vlan_data)
         self.save_vlans()
