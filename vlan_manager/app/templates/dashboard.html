@@ -56,6 +56,9 @@
                     <th>ID</th>
                     <th>Subnet (CIDR)</th>
                     <th>DHCP</th>
+                    <th>Gateway</th>
+                    <th>DNS</th>
+                    <th>Pools</th>
                     <th>Forwarding</th>
                     <th>NAT</th>
                     <th>Action</th>
@@ -67,6 +70,9 @@
                     <td>{{ vlan.id }}</td>
                     <td>{{ vlan.cidr }}</td>
                     <td>{{ 'Enabled' if vlan.dhcp else 'Disabled' }}</td>
+                    <td>{{ vlan.dhcp_gateway if vlan.dhcp else '-' }}</td>
+                    <td>{{ vlan.dhcp_dns if vlan.dhcp else '-' }}</td>
+                    <td>{{ vlan.dhcp_pools if vlan.dhcp else '-' }}</td>
                     <td>{{ 'Enabled' if vlan.get('forwarding', True) else 'Disabled' }}</td>
                     <td>{{ 'Enabled' if vlan.nat else 'Disabled' }}</td>
                     <td>
@@ -94,8 +100,22 @@
                 </div>
                 <div class="form-group">
                     <label class="checkbox-label">
-                        <input type="checkbox" name="dhcp"> Enable DHCP Server
+                        <input type="checkbox" name="dhcp" id="dhcp_checkbox" onchange="document.getElementById('dhcp_settings').style.display = this.checked ? 'block' : 'none'"> Enable DHCP Server
                     </label>
+                </div>
+                <div id="dhcp_settings" style="display: none; border: 1px solid #ddd; padding: 1rem; margin-bottom: 1rem; border-radius: 4px;">
+                    <div class="form-group">
+                        <label>DHCP Gateway (default: interface IP)</label>
+                        <input type="text" name="dhcp_gateway" placeholder="e.g. 192.168.10.1">
+                    </div>
+                    <div class="form-group">
+                        <label>DHCP DNS Servers (default: interface IP)</label>
+                        <input type="text" name="dhcp_dns" placeholder="e.g. 1.1.1.1, 8.8.8.8">
+                    </div>
+                    <div class="form-group">
+                        <label>DHCP IP Pools (default: last 80% of IPs)</label>
+                        <input type="text" name="dhcp_pools" placeholder="e.g. 192.168.10.50 - 192.168.10.250">
+                    </div>
                 </div>
                 <div class="form-group">
                     <label class="checkbox-label">

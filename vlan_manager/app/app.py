@@ -62,6 +62,9 @@ def add_vlan():
              data['dhcp'] = 'dhcp' in request.form
              data['forwarding'] = 'forwarding' in request.form
              data['nat'] = 'nat' in request.form
+             data['dhcp_gateway'] = request.form.get('dhcp_gateway')
+             data['dhcp_dns'] = request.form.get('dhcp_dns')
+             data['dhcp_pools'] = request.form.get('dhcp_pools')
 
         vlan_manager.add_vlan(data)
         flash('VLAN added successfully', 'success')

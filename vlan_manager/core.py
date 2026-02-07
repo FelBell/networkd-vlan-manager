@@ -79,6 +79,27 @@ class VlanManager:
         vlan_data['forwarding'] = bool(vlan_data.get('forwarding'))
         vlan_data['nat'] = bool(vlan_data.get('nat'))
 
+        if vlan_data['dhcp']:
+            iface = ipaddress.ip_interface(vlan_data['cidr'])
+            network = iface.network
+
+            if not vlan_data.get('dhcp_gateway'):
+                vlan_data['dhcp_gateway'] = str(iface.ip)
+
+            if not vlan_data.get('dhcp_dns'):
+                vlan_data['dhcp_dns'] = str(iface.ip)
+
+            if not vlan_data.get('dhcp_pools'):
+                hosts = list(network.hosts())
+                num_hosts = len(hosts)
+                pool_size = int(num_hosts * 0.8)
+                if pool_size > 0:
+                    pool_start = hosts[-pool_size]
+                    pool_end = hosts[-1]
+                    vlan_data['dhcp_pools'] = f"{pool_start} - {pool_end}"
+                else:
+                    vlan_data['dhcp_pools'] = ""
+
         # Check for overlaps
         potential_vlans = self.vlans + [vlan_data]
         self._check_for_overlaps(potential_vlans, raise_error=True)
@@ -120,7 +141,7 @@ Name={name}
 
 [Network]
 Address={vlan['cidr']}
-DHCPServer={'yes' if vlan.get('dhcp') else 'no'}
+DHCPServer=no
 IPMasquerade={'yes' if vlan.get('nat') else 'no'}
 IPForward={'yes' if vlan.get('forwarding', True) else 'no'}
 """
@@ -204,15 +225,70 @@ VLAN={name}
 
         return filepath
 
+    def generate_kea_config(self):
+        subnets = []
+        interfaces = []
+        for vlan in self.vlans:
+            if vlan.get('dhcp'):
+                iface = ipaddress.ip_interface(vlan['cidr'])
+                name = f"vlan{vlan['id']}"
+                interfaces.append(name)
+
+                pools = []
+                if vlan.get('dhcp_pools'):
+                    for p in vlan['dhcp_pools'].split(','):
+                        pools.append({"pool": p.strip()})
+
+                subnet = {
+                    "subnet": str(iface.network),
+                    "id": vlan['id'],
+                    "interface": name,
+                    "pools": pools,
+                    "option-data": [
+                        {
+                            "name": "routers",
+                            "data": vlan.get('dhcp_gateway', str(iface.ip))
+                        },
+                        {
+                            "name": "domain-name-servers",
+                            "data": vlan.get('dhcp_dns', str(iface.ip))
+                        }
+                    ]
+                }
+                subnets.append(subnet)
+
+        kea_config = {
+            "Dhcp4": {
+                "interfaces-config": {
+                    "interfaces": interfaces
+                },
+                "control-socket": {
+                    "socket-type": "unix",
+                    "socket-name": "/run/kea/kea-dhcp4-ctrl.sock"
+                },
+                "lease-database": {
+                    "type": "memfile",
+                    "lfc-interval": 3600
+                },
+                "subnet4": subnets
+            }
+        }
+        return kea_config
+
     def apply_config(self):
         try:
             self.generate_systemd_config()
             nft_file = self.generate_nftables_config()
+            kea_config = self.generate_kea_config()
 
             with open('/etc/sysctl.d/99-vlan-manager.conf', 'w') as f:
                 f.write("net.ipv4.ip_forward=1\n")
 
             subprocess.run(['sysctl', '-p', '/etc/sysctl.d/99-vlan-manager.conf'], check=False)
+
+            os.makedirs(os.path.dirname(Config.KEA_CONFIG_FILE), exist_ok=True)
+            with open(Config.KEA_CONFIG_FILE, 'w') as f:
+                json.dump(kea_config, f, indent=4)
 
             try:
                 subprocess.run(['networkctl', 'reload'], check=True)
@@ -223,6 +299,11 @@ VLAN={name}
                 subprocess.run(['nft', '-f', nft_file], check=True)
             except (FileNotFoundError, subprocess.CalledProcessError):
                 logger.warning("nft command not found or failed. Skipping nftables application.")
+
+            try:
+                subprocess.run(['systemctl', 'reload', Config.KEA_SERVICE_NAME], check=True)
+            except (FileNotFoundError, subprocess.CalledProcessError):
+                logger.warning(f"{Config.KEA_SERVICE_NAME} reload failed or not found. Skipping.")
 
         except Exception as e:
             logger.error(f"Failed to apply config: {e}")
