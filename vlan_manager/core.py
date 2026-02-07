@@ -81,7 +81,7 @@ Kind=vlan
 [VLAN]
 Id={vid}
 """
-            with open(os.path.join(network_dir, f"10-{name}.netdev"), 'w') as f:
+            with open(os.path.join(network_dir, f"20-{name}.netdev"), 'w') as f:
                 f.write(netdev_content)
 
             network_content = f"""[Match]
@@ -93,7 +93,7 @@ DHCPServer={'yes' if vlan.get('dhcp') else 'no'}
 IPMasquerade=no
 IPForward=yes
 """
-            with open(os.path.join(network_dir, f"10-{name}.network"), 'w') as f:
+            with open(os.path.join(network_dir, f"20-{name}.network"), 'w') as f:
                 f.write(network_content)
 
             dropin_content = f"""[Network]
@@ -124,7 +124,7 @@ VLAN={name}
     def _cleanup_configs(self, network_dir, parent_dropin_dir):
         if os.path.exists(network_dir):
             for f in os.listdir(network_dir):
-                if f.startswith("10-vlan") and (f.endswith(".netdev") or f.endswith(".network")):
+                if (f.startswith("10-vlan") or f.startswith("20-vlan")) and (f.endswith(".netdev") or f.endswith(".network")):
                     try:
                         os.remove(os.path.join(network_dir, f))
                     except OSError:

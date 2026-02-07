@@ -73,7 +73,7 @@ class TestVlanManager(unittest.TestCase):
         self.manager.add_vlan(vlan)
         self.manager.generate_systemd_config()
 
-        netdev_path = os.path.join(Config.NETWORK_DIR, '10-vlan20.netdev')
+        netdev_path = os.path.join(Config.NETWORK_DIR, '20-vlan20.netdev')
         self.assertTrue(os.path.exists(netdev_path))
         with open(netdev_path, 'r') as f:
             content = f.read()
@@ -81,7 +81,7 @@ class TestVlanManager(unittest.TestCase):
             self.assertIn('Kind=vlan', content)
             self.assertIn('Id=20', content)
 
-        network_path = os.path.join(Config.NETWORK_DIR, '10-vlan20.network')
+        network_path = os.path.join(Config.NETWORK_DIR, '20-vlan20.network')
         self.assertTrue(os.path.exists(network_path))
         with open(network_path, 'r') as f:
             content = f.read()
