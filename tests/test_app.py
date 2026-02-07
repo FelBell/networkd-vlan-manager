@@ -51,7 +51,6 @@ class TestVlanApp(unittest.TestCase):
             "dhcp": True,
             "dhcp_start": "192.168.40.100",
             "dhcp_end": "192.168.40.200",
-            "forwarding": True,
             "nat": False
         }
         response = self.app.post('/api/vlans', json=data)
@@ -60,6 +59,24 @@ class TestVlanApp(unittest.TestCase):
         response = self.app.get('/api/vlans')
         self.assertEqual(len(response.json), 1)
         self.assertEqual(response.json[0]['id'], 40)
+        self.assertEqual(response.json[0]['dhcp_start'], "192.168.40.100")
+
+    def test_add_vlan_with_dns(self):
+        data = {
+            "id": 41,
+            "cidr": "192.168.41.1/24",
+            "dhcp": True,
+            "dhcp_start": "192.168.41.100",
+            "dhcp_end": "192.168.41.200",
+            "dns_servers": "8.8.8.8, 8.8.4.4",
+            "nat": False
+        }
+        response = self.app.post('/api/vlans', json=data)
+        self.assertEqual(response.status_code, 201)
+
+        response = self.app.get('/api/vlans')
+        vlan = next(v for v in response.json if v['id'] == 41)
+        self.assertEqual(vlan['dns_servers'], "8.8.8.8, 8.8.4.4")
 
     def test_add_vlan_invalid(self):
         data = {

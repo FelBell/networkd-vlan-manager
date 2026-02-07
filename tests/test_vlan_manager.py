@@ -48,7 +48,6 @@ class TestVlanManager(unittest.TestCase):
             "dhcp": True,
             "dhcp_start": "192.168.10.100",
             "dhcp_end": "192.168.10.200",
-            "forwarding": True,
             "nat": True
         }
         self.manager.add_vlan(vlan)
@@ -74,7 +73,6 @@ class TestVlanManager(unittest.TestCase):
             "id": 20,
             "cidr": "10.0.0.1/24",
             "dhcp": False,
-            "forwarding": False,
             "nat": True
         }
         self.manager.add_vlan(vlan)
@@ -94,8 +92,7 @@ class TestVlanManager(unittest.TestCase):
             content = f.read()
             self.assertIn('Address=10.0.0.1/24', content)
             self.assertIn('DHCPServer=no', content)
-            self.assertIn('IPMasquerade=yes', content)
-            self.assertIn('IPForward=no', content)
+            self.assertIn('IPMasquerade=no', content)
 
         # Should detect '25-my-bridge.network' as parent config
         dropin_path = os.path.join(Config.NETWORK_DIR, '25-my-bridge.network.d', 'vlan-20.conf')
@@ -111,7 +108,6 @@ class TestVlanManager(unittest.TestCase):
             "dhcp": True,
             "dhcp_start": "172.16.0.100",
             "dhcp_end": "172.16.0.200",
-            "forwarding": True,
             "nat": True
         }
         self.manager.add_vlan(vlan)
@@ -153,6 +149,30 @@ class TestVlanManager(unittest.TestCase):
             dns = next(opt for opt in options if opt['name'] == 'domain-name-servers')
             self.assertEqual(routers['data'], '10.10.40.1')
             self.assertEqual(dns['data'], '10.10.40.1')
+
+    def test_kea_generation_with_custom_dns(self):
+        vlan = {
+            "id": 41,
+            "cidr": "10.10.41.1/24",
+            "dhcp": True,
+            "dhcp_start": "10.10.41.50",
+            "dhcp_end": "10.10.41.150",
+            "dns_servers": "8.8.8.8, 1.1.1.1",
+            "nat": False
+        }
+        self.manager.add_vlan(vlan)
+        filepath = self.manager.generate_kea_config()
+
+        self.assertTrue(os.path.exists(filepath))
+        with open(filepath, 'r') as f:
+            config = json.load(f)
+            dhcp4 = config['Dhcp4']
+            subnet = next(s for s in dhcp4['subnet4'] if s['id'] == 41)
+
+            # Check options
+            options = subnet['option-data']
+            dns = next(opt for opt in options if opt['name'] == 'domain-name-servers')
+            self.assertEqual(dns['data'], '8.8.8.8, 1.1.1.1')
 
     @patch('subprocess.run')
     def test_apply_config(self, mock_run):

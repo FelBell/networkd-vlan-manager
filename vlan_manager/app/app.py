@@ -60,7 +60,6 @@ def add_vlan():
     try:
         if not request.is_json:
              data['dhcp'] = 'dhcp' in request.form
-             data['forwarding'] = 'forwarding' in request.form
              data['nat'] = 'nat' in request.form
 
         vlan_manager.add_vlan(data)

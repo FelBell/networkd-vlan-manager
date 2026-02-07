@@ -78,7 +78,7 @@ class VlanManager:
         vlan_data['dhcp'] = bool(vlan_data.get('dhcp'))
         vlan_data['dhcp_start'] = vlan_data.get('dhcp_start', '')
         vlan_data['dhcp_end'] = vlan_data.get('dhcp_end', '')
-        vlan_data['forwarding'] = bool(vlan_data.get('forwarding'))
+        vlan_data['dns_servers'] = vlan_data.get('dns_servers', '')
         vlan_data['nat'] = bool(vlan_data.get('nat'))
 
         if vlan_data['dhcp']:
@@ -89,6 +89,13 @@ class VlanManager:
                 ipaddress.IPv4Address(vlan_data['dhcp_end'])
             except ValueError:
                 raise ValueError("Invalid DHCP start or end address")
+
+            if vlan_data['dns_servers']:
+                for dns in vlan_data['dns_servers'].split(','):
+                    try:
+                        ipaddress.IPv4Address(dns.strip())
+                    except ValueError:
+                        raise ValueError(f"Invalid DNS server address: {dns}")
 
         # Check for overlaps
         potential_vlans = self.vlans + [vlan_data]
@@ -131,11 +138,9 @@ Name={name}
 
 [Network]
 Address={vlan['cidr']}
-
 DHCPServer=no
-IPMasquerade={'yes' if vlan.get('nat') else 'no'}
-IPForward={'yes' if vlan.get('forwarding', True) else 'no'}
-
+IPMasquerade=no
+IPForward=yes
 """
             with open(os.path.join(network_dir, f"20-{name}.network"), 'w') as f:
                 f.write(network_content)
@@ -244,7 +249,7 @@ VLAN={name}
                         },
                         {
                             "name": "domain-name-servers",
-                            "data": interface_addr
+                            "data": vlan.get('dns_servers') if vlan.get('dns_servers') else interface_addr
                         }
                     ]
                 }
