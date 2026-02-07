@@ -56,6 +56,7 @@
                     <th>ID</th>
                     <th>Subnet (CIDR)</th>
                     <th>DHCP</th>
+                    <th>DHCP Range</th>
                     <th>NAT/Fwd</th>
                     <th>Action</th>
                 </tr>
@@ -66,6 +67,13 @@
                     <td>{{ vlan.id }}</td>
                     <td>{{ vlan.cidr }}</td>
                     <td>{{ 'Enabled' if vlan.dhcp else 'Disabled' }}</td>
+                    <td>
+                        {% if vlan.dhcp %}
+                            {{ vlan.dhcp_start }} - {{ vlan.dhcp_end }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
                     <td>{{ 'Enabled' if vlan.nat else 'Disabled' }}</td>
                     <td>
                         <form action="{{ url_for('delete_vlan', vlan_id=vlan.id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete VLAN {{ vlan.id }}?');">
@@ -92,14 +100,36 @@
                 </div>
                 <div class="form-group">
                     <label class="checkbox-label">
-                        <input type="checkbox" name="dhcp"> Enable DHCP Server
+                        <input type="checkbox" name="dhcp" id="dhcp_checkbox" onchange="toggleDhcpFields()"> Enable DHCP Server
                     </label>
+                </div>
+                <div id="dhcp_options" style="display: none; padding-left: 1.5rem; margin-bottom: 1rem; border-left: 2px solid #ddd;">
+                    <div class="form-group">
+                        <label>DHCP Start Address</label>
+                        <input type="text" name="dhcp_start" placeholder="192.168.10.100" pattern="^([0-9]{1,3}\.){3}[0-9]{1,3}$" title="Enter a valid IP address">
+                    </div>
+                    <div class="form-group">
+                        <label>DHCP End Address</label>
+                        <input type="text" name="dhcp_end" placeholder="192.168.10.200" pattern="^([0-9]{1,3}\.){3}[0-9]{1,3}$" title="Enter a valid IP address">
+                    </div>
                 </div>
                 <div class="form-group">
                     <label class="checkbox-label">
                         <input type="checkbox" name="nat"> Enable NAT (Masquerade) & IP Forwarding
                     </label>
                 </div>
+
+                <script>
+                function toggleDhcpFields() {
+                    var checkbox = document.getElementById('dhcp_checkbox');
+                    var options = document.getElementById('dhcp_options');
+                    options.style.display = checkbox.checked ? 'block' : 'none';
+                    var inputs = options.querySelectorAll('input');
+                    inputs.forEach(input => {
+                        input.required = checkbox.checked;
+                    });
+                }
+                </script>
                 <button type="submit" class="btn btn-primary">Add VLAN</button>
             </form>
         </div>

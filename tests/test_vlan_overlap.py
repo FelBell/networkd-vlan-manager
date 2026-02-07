@@ -25,7 +25,7 @@ class TestVlanOverlap(unittest.TestCase):
         vlan1 = {
             "id": 10,
             "cidr": "192.168.10.1/24",
-            "dhcp": True,
+            "dhcp": False,
             "nat": True
         }
         self.manager.add_vlan(vlan1)
@@ -34,7 +34,7 @@ class TestVlanOverlap(unittest.TestCase):
         vlan2 = {
             "id": 11,
             "cidr": "192.168.10.1/24",
-            "dhcp": True,
+            "dhcp": False,
             "nat": True
         }
         with self.assertRaises(ValueError) as cm:
@@ -45,7 +45,7 @@ class TestVlanOverlap(unittest.TestCase):
         vlan3 = {
             "id": 12,
             "cidr": "192.168.10.0/25",
-            "dhcp": True,
+            "dhcp": False,
             "nat": True
         }
         with self.assertRaises(ValueError) as cm:
@@ -56,7 +56,7 @@ class TestVlanOverlap(unittest.TestCase):
         vlan4 = {
             "id": 13,
             "cidr": "192.168.0.0/16",
-            "dhcp": True,
+            "dhcp": False,
             "nat": True
         }
         with self.assertRaises(ValueError) as cm:
@@ -67,7 +67,7 @@ class TestVlanOverlap(unittest.TestCase):
         vlan5 = {
             "id": 14,
             "cidr": "192.168.11.1/24",
-            "dhcp": True,
+            "dhcp": False,
             "nat": True
         }
         self.manager.add_vlan(vlan5) # Should not raise

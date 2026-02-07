@@ -16,10 +16,12 @@ class TestVlanManager(unittest.TestCase):
         self.original_data_file = Config.DATA_FILE
         self.original_network_dir = Config.NETWORK_DIR
         self.original_nftables_dir = Config.NFTABLES_DIR
+        self.original_kea_conf = Config.KEA_CONF_FILE
 
         Config.DATA_FILE = os.path.join(self.test_dir, 'vlans.json')
         Config.NETWORK_DIR = os.path.join(self.test_dir, 'network')
         Config.NFTABLES_DIR = os.path.join(self.test_dir, 'nftables')
+        Config.KEA_CONF_FILE = os.path.join(self.test_dir, 'kea/kea-dhcp4.conf')
         Config.PARENT_INTERFACE = 'br0'
         Config.WAN_INTERFACE = 'eth0'
 
@@ -37,12 +39,15 @@ class TestVlanManager(unittest.TestCase):
         Config.DATA_FILE = self.original_data_file
         Config.NETWORK_DIR = self.original_network_dir
         Config.NFTABLES_DIR = self.original_nftables_dir
+        Config.KEA_CONF_FILE = self.original_kea_conf
 
     def test_add_vlan(self):
         vlan = {
             "id": 10,
             "cidr": "192.168.10.1/24",
             "dhcp": True,
+            "dhcp_start": "192.168.10.100",
+            "dhcp_end": "192.168.10.200",
             "nat": True
         }
         self.manager.add_vlan(vlan)
@@ -101,6 +106,8 @@ class TestVlanManager(unittest.TestCase):
             "id": 30,
             "cidr": "172.16.0.1/24",
             "dhcp": True,
+            "dhcp_start": "172.16.0.100",
+            "dhcp_end": "172.16.0.200",
             "nat": True
         }
         self.manager.add_vlan(vlan)
@@ -113,6 +120,35 @@ class TestVlanManager(unittest.TestCase):
             self.assertIn('chain postrouting', content)
             self.assertIn('masquerade', content)
             self.assertIn('172.16.0.1/24', content)
+
+    def test_kea_generation(self):
+        vlan = {
+            "id": 40,
+            "cidr": "10.10.40.1/24",
+            "dhcp": True,
+            "dhcp_start": "10.10.40.50",
+            "dhcp_end": "10.10.40.150",
+            "nat": False
+        }
+        self.manager.add_vlan(vlan)
+        filepath = self.manager.generate_kea_config()
+
+        self.assertTrue(os.path.exists(filepath))
+        with open(filepath, 'r') as f:
+            config = json.load(f)
+            self.assertIn('Dhcp4', config)
+            dhcp4 = config['Dhcp4']
+            self.assertIn('subnet4', dhcp4)
+            subnet = dhcp4['subnet4'][0]
+            self.assertEqual(subnet['subnet'], '10.10.40.0/24')
+            self.assertEqual(subnet['pools'][0]['pool'], '10.10.40.50 - 10.10.40.150')
+
+            # Check options
+            options = subnet['option-data']
+            routers = next(opt for opt in options if opt['name'] == 'routers')
+            dns = next(opt for opt in options if opt['name'] == 'domain-name-servers')
+            self.assertEqual(routers['data'], '10.10.40.1')
+            self.assertEqual(dns['data'], '10.10.40.1')
 
     @patch('subprocess.run')
     def test_apply_config(self, mock_run):
