@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>VLAN Manager Dashboard</title>
+    <style>
+        body { font-family: sans-serif; padding: 2rem; background: #f0f0f0; margin: 0; }
+        .container { max-width: 900px; margin: 0 auto; background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+        th, td { padding: 0.75rem; border-bottom: 1px solid #ddd; text-align: left; }
+        th { background: #f8f9fa; font-weight: 600; }
+        .btn { padding: 0.5rem 1rem; border: none; border-radius: 4px; cursor: pointer; text-decoration: none; display: inline-block; font-size: 0.9rem; }
+        .btn-primary { background: #007bff; color: white; }
+        .btn-primary:hover { background: #0056b3; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-danger:hover { background: #bd2130; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-success:hover { background: #218838; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; border-bottom: 2px solid #eee; padding-bottom: 1rem; }
+        h1 { margin: 0; font-size: 1.5rem; }
+        h2 { font-size: 1.25rem; margin-bottom: 1rem; color: #333; }
+        .form-group { margin-bottom: 1rem; }
+        label { display: block; margin-bottom: 0.5rem; font-weight: bold; font-size: 0.9rem; }
+        input[type="text"] { width: 100%; padding: 0.5rem; box-sizing: border-box; border: 1px solid #ced4da; border-radius: 4px; }
+        .flash { padding: 1rem; margin-bottom: 1rem; border-radius: 4px; }
+        .flash.success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .flash.error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .checkbox-label { display: flex; align-items: center; font-weight: normal; cursor: pointer; }
+        .checkbox-label input { margin-right: 0.5rem; width: auto; }
+        .add-vlan-section { background: #f9f9f9; padding: 1.5rem; border-radius: 6px; border: 1px solid #eee; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>VLAN Manager</h1>
+            <div>
+                <form action="{{ url_for('apply_config') }}" method="POST" style="display:inline;">
+                    <button type="submit" class="btn btn-success" title="Generate config and reload network services">Apply Changes</button>
+                </form>
+                <a href="{{ url_for('logout') }}" class="btn btn-primary" style="margin-left: 0.5rem;">Logout</a>
+            </div>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="flash {{ category }}">{{ message }}</div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <h2>Current VLANs</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Subnet (CIDR)</th>
+                    <th>DHCP</th>
+                    <th>NAT/Fwd</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for vlan in vlans %}
+                <tr>
+                    <td>{{ vlan.id }}</td>
+                    <td>{{ vlan.cidr }}</td>
+                    <td>{{ 'Enabled' if vlan.dhcp else 'Disabled' }}</td>
+                    <td>{{ 'Enabled' if vlan.nat else 'Disabled' }}</td>
+                    <td>
+                        <form action="{{ url_for('delete_vlan', vlan_id=vlan.id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete VLAN {{ vlan.id }}?');">
+                            <button type="submit" class="btn btn-danger">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5" style="text-align: center; color: #666;">No VLANs configured.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <h2 style="margin-top: 2rem;">Add New VLAN</h2>
+        <div class="add-vlan-section">
+            <form action="{{ url_for('add_vlan') }}" method="POST">
+                <div class="form-group">
+                    <label>VLAN ID (1-4094)</label>
+                    <input type="text" name="id" required pattern="\d+" title="Enter a valid VLAN ID">
+                </div>
+                <div class="form-group">
+                    <label>Subnet CIDR (e.g., 192.168.10.1/24)</label>
+                    <input type="text" name="cidr" required placeholder="192.168.10.1/24" pattern="^([0-9]{1,3}\.){3}[0-9]{1,3}(\/([0-9]|[1-2][0-9]|3[0-2]))?$" title="Enter a valid CIDR">
+                </div>
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="dhcp"> Enable DHCP Server
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="nat"> Enable NAT (Masquerade) & IP Forwarding
+                    </label>
+                </div>
+                <button type="submit" class="btn btn-primary">Add VLAN</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
