@@ -16,10 +16,12 @@ class TestVlanManager(unittest.TestCase):
         self.original_data_file = Config.DATA_FILE
         self.original_network_dir = Config.NETWORK_DIR
         self.original_nftables_dir = Config.NFTABLES_DIR
+        self.original_kea_config = Config.KEA_CONFIG_FILE
 
         Config.DATA_FILE = os.path.join(self.test_dir, 'vlans.json')
         Config.NETWORK_DIR = os.path.join(self.test_dir, 'network')
         Config.NFTABLES_DIR = os.path.join(self.test_dir, 'nftables')
+        Config.KEA_CONFIG_FILE = os.path.join(self.test_dir, 'kea/kea-dhcp4.conf')
         Config.PARENT_INTERFACE = 'br0'
         Config.WAN_INTERFACE = 'eth0'
 
@@ -37,6 +39,7 @@ class TestVlanManager(unittest.TestCase):
         Config.DATA_FILE = self.original_data_file
         Config.NETWORK_DIR = self.original_network_dir
         Config.NFTABLES_DIR = self.original_nftables_dir
+        Config.KEA_CONFIG_FILE = self.original_kea_config
 
     def test_add_vlan(self):
         vlan = {

@@ -10,3 +10,5 @@ class Config:
     NFTABLES_INCLUDE_FILE = 'vlans.nft'
     ADMIN_USERNAME = os.environ.get('ADMIN_USERNAME', 'admin')
     ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'password')
+    KEA_CONFIG_FILE = os.environ.get('KEA_CONFIG_FILE', '/etc/kea/kea-dhcp4.conf')
+    KEA_SERVICE_NAME = os.environ.get('KEA_SERVICE_NAME', 'kea-dhcp4-server')
