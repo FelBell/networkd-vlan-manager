@@ -297,9 +297,9 @@ VLAN={name}
                 logger.warning("nft command not found or failed. Skipping nftables application.")
 
             try:
-                subprocess.run(['systemctl', 'reload', Config.KEA_SERVICE_NAME], check=True)
+                subprocess.run(['systemctl', 'restart', Config.KEA_SERVICE_NAME], check=True)
             except (FileNotFoundError, subprocess.CalledProcessError):
-                logger.warning(f"{Config.KEA_SERVICE_NAME} reload failed or not found. Skipping.")
+                logger.warning(f"{Config.KEA_SERVICE_NAME} restart failed or not found. Skipping.")
 
         except Exception as e:
             logger.error(f"Failed to apply config: {e}")
